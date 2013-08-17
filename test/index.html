@@ -2,29 +2,64 @@
 <html>
 <head>
     <title>backbone-deep-model tests</title>
-    
-    <link rel="stylesheet" href="lib/qunit.css" type="text/css" media="screen" />
-    
-    <script src="lib/jquery-1.8.3.min.js"></script>
-    <script src="lib/underscore-1.4.4.js"></script>
-    <script src="lib/backbone-0.9.10.js"></script>
-    <script src="lib/qunit.js"></script>
-    <script src="lib/environment.js"></script>
-    
-    <!-- source -->
-    <script src="../lib/underscore.mixin.deepExtend.js"></script>
-    <script src="../src/deep-model.js"></script>
 
-    <!-- tests -->
-    <script src="model.js"></script>
-    <script src="deep-model.test.js"></script>
+    <link rel="stylesheet" href="lib/qunit.css" type="text/css" media="screen" />
+    <script src="lib/require.js"></script>
+
+    <script type="text/javascript">
+        "use strict";
+        require.config({
+                           baseUrl : './',
+                           paths   : {
+                               jquery     : 'lib/jquery-1.8.3.min',
+                               underscore : 'lib/underscore-1.4.4',
+                               'backbone' : 'lib/backbone-0.9.10',
+                               'QUnit'    : 'lib/qunit',
+                               'chaplin'  : 'lib/chaplin',
+                               'env'      : 'lib/environment'
+                           },
+                           shim    : {
+                               underscore : {
+                                   exports : '_'
+                               },
+                               backbone   : {
+                                   deps    : ['underscore', 'jquery'],
+                                   exports : 'Backbone'
+                               },
+                               'QUnit'    : {
+                                   exports : 'QUnit',
+                                   init    : function ()
+                                   {
+                                       QUnit.config.autoload = false;
+                                       QUnit.config.autostart = false;
+                                   }
+                               },
+                               'env'      : {
+                                   exports : 'Environment',
+                                   deps    : ['backbone']
+                               }
+                           }
+                       });
+        require(['../src/chaplin-deep-model']);
+        require(['../lib/underscore.mixin.deepExtend']);
+        require(
+                ['QUnit', 'model.js', 'deep-model.test.js'],
+                function (QUnit, modelTest, deepModelTest)
+                {
+                    console.log(modelTest)
+                    modelTest.run();
+                    deepModelTest.run();
+                    QUnit.load();
+                    QUnit.start();
+                }
+        );</script>
 </head>
 <body>
-    <div id="qunit"></div>
-    <div id="qunit-fixture">
-        <div id='testElement'>
-            <h1>Test</h1>
-        </div>
+<div id="qunit"></div>
+<div id="qunit-fixture">
+    <div id='testElement'>
+        <h1>Test</h1>
     </div>
+</div>
 </body>
 </html>

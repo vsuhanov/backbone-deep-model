@@ -1,943 +1,1025 @@
-module("DeepModel");
+define(['chaplin', 'jquery', 'underscore', 'QUnit', 'env'], function (Chaplin, $, _, QUnit, Environment)
+{
+	return {
+		run : function ()
+		{
 
-function create() {
-    var model = new Backbone.DeepModel({
-        id: 123,
-        user: {
-            type: 'Spy',
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        }
-    });
+			function create()
+			{
+				var model = new Chaplin.DeepModel({
+													  id   : 123,
+													  user : {
+														  type : 'Spy',
+														  name : {
+															  first : 'Sterling',
+															  last  : 'Archer'
+														  }
+													  }
+												  });
 
-    return model;
-}
+				return model;
+			}
 
-test("get: Gets nested attribute values", function() {
-    var model = create();
+			test("get: Gets nested attribute values", function ()
+			{
+				var model = create();
+
+				deepEqual(model.get('id'), 123);
+
+				deepEqual(model.get('user'), {
+					type : 'Spy',
+					name : {
+						first : 'Sterling',
+						last  : 'Archer'
+					}
+				});
 
-    deepEqual(model.get('id'), 123);
+				deepEqual(model.get('user.type'), 'Spy');
 
-    deepEqual(model.get('user'), {
-        type: 'Spy',
-        name: {
-            first: 'Sterling',
-            last: 'Archer'
-        }
-    });
+				deepEqual(model.get('user.name'), {
+					first : 'Sterling',
+					last  : 'Archer'
+				});
 
-    deepEqual(model.get('user.type'), 'Spy');
+				deepEqual(model.get('user.name.first'), 'Sterling');
+			});
 
-    deepEqual(model.get('user.name'), {
-        first: 'Sterling',
-        last: 'Archer'
-    });
 
-    deepEqual(model.get('user.name.first'), 'Sterling');
-});
+			test("get: Gets nested attribute values from arrays", function ()
+			{
+				var model = new Chaplin.DeepModel({
+													   spies : [
+														   { name : 'Sterling' },
+														   { name : 'Lana' }
+													   ]
+												   });
 
+				deepEqual(model.get('spies.0.name'), 'Sterling');
 
-test("get: Gets nested attribute values from arrays", function() {
-    var model = new Backbone.DeepModel({
-        spies: [
-            { name: 'Sterling' },
-            { name: 'Lana' }
-        ]
-    });
+				deepEqual(model.get('spies.1.name'), 'Lana');
+			});
 
-    deepEqual(model.get('spies.0.name'), 'Sterling');
 
-    deepEqual(model.get('spies.1.name'), 'Lana');
-});
+			test("get: Gets attributes if empty objects", function ()
+			{
+				var model = new Chaplin.DeepModel({
+													   foo : {},
+													   bar : []
+												   });
 
+				deepEqual(model.get('foo'), {});
+				deepEqual(model.get('bar'), []);
+			});
 
-test("get: Gets attributes if empty objects", function() {
-    var model = new Backbone.DeepModel({
-        foo: {},
-        bar: []
-    });
 
-    deepEqual(model.get('foo'), {});
-    deepEqual(model.get('bar'), []);
-});
+			test("set: Sets nested values given a path", function ()
+			{
+				var model = create();
 
+				model.set({ id : 456 });
 
-test("set: Sets nested values given a path", function() {
-    var model = create();
+				equal(model.attributes.id, 456);
 
-    model.set({ id: 456 });
 
-    equal(model.attributes.id, 456);
+				model.set({
+							  'user.name.first' : 'Lana',
+							  'user.name.last'  : 'Kang'
+						  });
 
+				equal(model.attributes.user.name.first, 'Lana');
+				equal(model.attributes.user.name.last, 'Kang');
 
-    model.set({
-        'user.name.first': 'Lana',
-        'user.name.last':  'Kang'
-    });
 
-    equal(model.attributes.user.name.first, 'Lana');
-    equal(model.attributes.user.name.last, 'Kang');
+				model.set({
+							  'user.type' : 'Agent'
+						  });
 
+				equal(model.attributes.user.type, 'Agent');
 
-    model.set({
-        'user.type': 'Agent'
-    });
 
-    equal(model.attributes.user.type, 'Agent');
+				model.set({
+							  'user.name' : {
+								  first : 'Cheryl',
+								  last  : 'Tunt'
+							  }
+						  });
+
+				equal(model.attributes.user.name.first, 'Cheryl');
+				equal(model.attributes.user.name.last, 'Tunt');
+
+
+				model.set({
+							  user : {
+								  type : 'Secretary',
+								  name : {
+									  first : 'Cheryl',
+									  last  : 'Tunt'
+								  }
+							  }
+						  });
 
+				deepEqual(model.attributes.user, {
+					type : 'Secretary',
+					name : {
+						first : 'Cheryl',
+						last  : 'Tunt'
+					}
+				});
+			});
 
-    model.set({
-        'user.name': {
-            first: 'Cheryl',
-            last: 'Tunt'
-        }
-    });
 
-    equal(model.attributes.user.name.first, 'Cheryl');
-    equal(model.attributes.user.name.last, 'Tunt');
+			test('set: Sets a single value - not nested', function ()
+			{
+				var model = create();
 
+				model.set('id', 456);
 
-    model.set({
-        user: {
-            type: 'Secretary',
-            name: {
-                first: 'Cheryl',
-                last: 'Tunt'
-            }
-        }
-    });
+				equal(model.attributes.id, 456);
+			});
 
-    deepEqual(model.attributes.user, {
-        type: 'Secretary',
-        name: {
-            first: 'Cheryl',
-            last: 'Tunt'
-        }
-    });
-});
 
+			test('set: Sets a single value - nested', function ()
+			{
+				var model = create();
 
-test('set: Sets a single value - not nested', function() {
-    var model = create();
+				model.set('user.type', 'Admin');
+				model.set('user.name.first', 'Foo');
 
-    model.set('id', 456);
+				equal(model.attributes.user.type, 'Admin');
+				equal(model.attributes.user.name.first, 'Foo');
+			});
 
-    equal(model.attributes.id, 456);
-});
+			test('set: Sets a single value inside null to create an object', function ()
+			{
+				var model = create();
 
+				model.set('user', null);
+				model.set('user.type', 'Admin');
 
-test('set: Sets a single value - nested', function() {
-   var model = create();
+				equal(model.attributes.user.type, 'Admin');
+			});
 
-   model.set('user.type', 'Admin');
-   model.set('user.name.first', 'Foo');
+			test('set: Sets a single value inside null to create an object when given an object', function ()
+			{
+				var model = create();
 
-   equal(model.attributes.user.type, 'Admin');
-   equal(model.attributes.user.name.first, 'Foo');
-});
+				model.set('user', null);
+				model.set({user : {type : 'Admin'}});
 
-test('set: Sets a single value inside null to create an object', function() {
-   var model = create();
+				equal(model.attributes.user.type, 'Admin');
+			});
 
-   model.set('user', null);
-   model.set('user.type', 'Admin');
+			test("set: Sets values when given an object", function ()
+			{
+				var model = create();
 
-   equal(model.attributes.user.type, 'Admin');
-});
+				var newValues = {
+					id   : 456,
+					user : {
+						type : 'Agent',
+						name : {
+							first : 'Lana',
+							last  : 'Kang'
+						}
+					}
+				};
 
-test('set: Sets a single value inside null to create an object when given an object', function() {
-   var model = create();
+				model.set(newValues);
 
-   model.set('user', null);
-   model.set({user: {type: 'Admin'}});
+				deepEqual(model.attributes, newValues);
+			});
 
-   equal(model.attributes.user.type, 'Admin');
-});
+			test('set: Can set an object in place of a child non-object value', function ()
+			{
+				var model = new Chaplin.DeepModel({
+													   id   : 123,
+													   name : ''
+												   });
+
+				var newName = {
+					first : 'Burt',
+					last  : 'Reynolds'
+				};
 
-test("set: Sets values when given an object", function() {
-    var model = create();
+				model.set('name', newName);
 
-    var newValues = {
-        id: 456,
-        user: {
-            type: 'Agent',
-            name: {
-                first: 'Lana',
-                last: 'Kang'
-            }
-        }
-    };
+				deepEqual(model.attributes.id, 123);
+				deepEqual(model.attributes.name, newName);
+			});
 
-    model.set(newValues);
 
-    deepEqual(model.attributes, newValues);
-});
+			test("set: Triggers model change:[attribute] events", function ()
+			{
+				(function ()
+				{
+					var model = create();
 
-test('set: Can set an object in place of a child non-object value', function() {
-    var model = new Backbone.DeepModel({
-        id: 123,
-        name: ''
-    });
+					var triggered = false;
 
-    var newName = {
-        first: 'Burt',
-        last: 'Reynolds'
-    };
+					model.bind('change:id', function (model, val)
+					{
+						equal(val, 456);
 
-    model.set('name', newName);
+						triggered = true;
+					});
 
-    deepEqual(model.attributes.id, 123);
-    deepEqual(model.attributes.name, newName);
-});
+					model.set({ id : 456 });
 
+					//Check callbacks ran
+					ok(triggered);
+				})();
 
-test("set: Triggers model change:[attribute] events", function() {
-    (function() {
-        var model = create();
 
-        var triggered = false;
+				(function ()
+				{
+					var model = create();
 
-        model.bind('change:id', function(model, val) {
-            equal(val, 456);
+					var triggered1 = false,
+							triggered2 = false;
 
-            triggered = true;
-        });
+					model.on('change:user.name.first', function (model, val)
+					{
+						equal(val, 'Lana');
 
-        model.set({ id: 456 });
+						triggered1 = true;
+					});
 
-        //Check callbacks ran
-        ok(triggered);
-    })();
+					model.bind('change:user.name.last', function (model, val)
+					{
+						equal(val, 'Kang');
 
+						triggered2 = true;
+					});
 
-    (function() {
-        var model = create();
+					model.set({
+								  'user.name.first' : 'Lana',
+								  'user.name.last'  : 'Kang'
+							  });
 
-        var triggered1 = false,
-            triggered2 = false;
+					//Check callbacks ran
+					ok(triggered1);
+					ok(triggered2);
+				})();
 
-        model.on('change:user.name.first', function(model, val) {
-            equal(val, 'Lana');
 
-            triggered1 = true;
-        });
+				//Check only expected change events are running
+				(function ()
+				{
+					var model = create();
 
-        model.bind('change:user.name.last', function(model, val) {
-            equal(val, 'Kang');
+					var triggeredEvents = [];
 
-            triggered2 = true;
-        });
+					model.bind('all', function (changedAttr, model, val)
+					{
+						triggeredEvents.push(changedAttr);
+					});
 
-        model.set({
-            'user.name.first': 'Lana',
-            'user.name.last':  'Kang'
-        });
+					model.set({
+								  'id'              : 456,
+								  'user.name.first' : 'Lana'
+							  });
 
-        //Check callbacks ran
-        ok(triggered1);
-        ok(triggered2);
-    })();
+					//Check callbacks ran
+					deepEqual(triggeredEvents, [
+						'change:id',
+						'change:user.name.first',
+						'change:user.name.*',
+						'change:user.name', // * @restorer
+						'change:user.*',
+						'change:user', // * @restorer
+						'change'
+					]);
+				})();
+			});
 
+			test("set: Correct values passed to wildcard event handlers", function ()
+			{
+				var model = create();
 
-    //Check only expected change events are running
-    (function() {
-        var model = create();
+				var triggered1 = false,
+						triggered2 = false,
+						triggered3 = false;
 
-        var triggeredEvents = [];
+				model.on('change:user.name.first', function (model, val)
+				{
+					equal(val, 'Lana');
 
-        model.bind('all', function(changedAttr, model, val) {
-            triggeredEvents.push(changedAttr);
-        });
+					triggered1 = true;
+				});
 
-        model.set({
-            'id': 456,
-            'user.name.first': 'Lana'
-        });
+				model.bind('change:user.name.*', function (model, val)
+				{
+					deepEqual(val, { first : 'Lana', last : 'Archer' });
 
-        //Check callbacks ran
-        deepEqual(triggeredEvents, [
-            'change:id',
-            'change:user.name.first',
-            'change:user.name.*',
-            'change:user.name', // * @restorer
-            'change:user.*',
-            'change:user', // * @restorer
-            'change'
-        ]);
-    })();
-});
+					triggered2 = true;
+				});
 
-test("set: Correct values passed to wildcard event handlers", function() {
-    var model = create();
+				model.bind('change:user.*', function (model, val)
+				{
+					deepEqual(val, { name : { first : 'Lana', last : 'Archer' }, type : 'Spy' });
 
-    var triggered1 = false,
-        triggered2 = false,
-        triggered3 = false;
+					triggered3 = true;
+				});
 
-    model.on('change:user.name.first', function(model, val) {
-        equal(val, 'Lana');
+				model.set({
+							  'user.name.first' : 'Lana'
+						  });
 
-        triggered1 = true;
-    });
+				//Check callbacks ran
+				ok(triggered1);
+				ok(triggered2);
+				ok(triggered3);
+			});
 
-    model.bind('change:user.name.*', function(model, val) {
-        deepEqual(val, { first: 'Lana', last: 'Archer' } );
+			test("set: Don't convert Date objects to strings", function ()
+			{
+				var model = create();
 
-        triggered2 = true;
-    });
+				model.set({ date : new Date });
 
-    model.bind('change:user.*', function(model, val) {
-        deepEqual(val, { name: { first: 'Lana', last: 'Archer' }, type: 'Spy' });
+				ok(_.isDate(model.attributes.date));
+			});
 
-        triggered3 = true;
-    });
+			test("set: Don't delete property when setting it twice with the same value", function ()
+			{
+				var model = new Chaplin.DeepModel();
+				model.set('route', {});
 
-    model.set({
-        'user.name.first': 'Lana'
-    });
+				model.set('route.pathName', '/some/route/path');
+				equal(model.get('route.pathName'), '/some/route/path');
 
-    //Check callbacks ran
-    ok(triggered1);
-    ok(triggered2);
-    ok(triggered3);
-});
+				model.set('route.pathName', '/some/route/path');
+				equal(model.get('route.pathName'), '/some/route/path');
+			});
 
-test("set: Don't convert Date objects to strings", function() {
-    var model = create();
+			test("set: options are passed to the change:[attribute] callback", function ()
+			{
+				(function ()
+				{
+					var model = create();
 
-    model.set({ date: new Date });
+					var triggered = false;
 
-    ok(_.isDate(model.attributes.date));
-});
+					model.bind('change:id', function (model, val, options)
+					{
+						equal(val, 456);
 
-test("set: Don't delete property when setting it twice with the same value", function() {
-    var model = new Backbone.DeepModel();
-    model.set('route', {});
+						equal(options.owner, 'Jane Doe');
+						triggered = true;
+					});
 
-    model.set('route.pathName', '/some/route/path');
-    equal(model.get('route.pathName'), '/some/route/path');
+					model.set({ id : 456 }, {owner : 'Jane Doe'});
 
-    model.set('route.pathName', '/some/route/path');
-    equal(model.get('route.pathName'), '/some/route/path');
-});
+					//Check callbacks ran
+					ok(triggered);
+				})();
 
-test("set: options are passed to the change:[attribute] callback", function() {
-    (function() {
-        var model = create();
+				(function ()
+				{
+					var model = create();
 
-        var triggered = false;
+					var triggered1 = false,
+							triggered2 = false;
 
-        model.bind('change:id', function(model, val, options) {
-            equal(val, 456);
+					model.on('change:user.name.first', function (model, val, options)
+					{
+						equal(val, 'Lana');
 
-            equal(options.owner, 'Jane Doe');
-            triggered = true;
-        });
+						equal(options.changeid, 871);
+						triggered1 = true;
+					});
 
-        model.set({ id: 456 }, {owner: 'Jane Doe'});
+					model.bind('change:user.name.last', function (model, val, options)
+					{
+						equal(val, 'Kang');
 
-        //Check callbacks ran
-        ok(triggered);
-    })();
+						equal(options.changeid, 872);
+						triggered2 = true;
+					});
 
-    (function() {
-        var model = create();
+					model.set({'user.name.first' : 'Lana' }, {changeid : 871});
+					model.set({user : { name : { last : 'Kang' } } }, {changeid : 872});
 
-        var triggered1 = false,
-            triggered2 = false;
+					//Check callbacks ran
+					ok(triggered1);
+					ok(triggered2);
+				})();
+			});
 
-        model.on('change:user.name.first', function(model, val, options) {
-            equal(val, 'Lana');
+			test("has: Check if model has root key", function ()
+			{
+				var model = create();
 
-            equal(options.changeid, 871);
-            triggered1 = true;
-        });
+				equal(model.has('user'), true);
+			});
 
-        model.bind('change:user.name.last', function(model, val, options) {
-            equal(val, 'Kang');
+			test("has: Check if model has deep key", function ()
+			{
+				var model = create();
 
-            equal(options.changeid, 872);
-            triggered2 = true;
-        });
+				equal(model.has('user.name.last'), true);
+			});
 
-        model.set({'user.name.first': 'Lana' }, {changeid: 871});
-        model.set({user: { name: { last: 'Kang' } } }, {changeid: 872});
+			test("has: Don't find nonexistent key", function ()
+			{
+				var model = create();
 
-        //Check callbacks ran
-        ok(triggered1);
-        ok(triggered2);
-    })();
-});
+				equal(model.has('user.turtleneck'), false);
+			});
 
-test("has: Check if model has root key", function(){
-	var model = create();
+			test("unset: Unset a root key", function ()
+			{
+				var model = create();
 
-	equal(model.has('user'), true);
-});
+				model.unset('user');
 
-test("has: Check if model has deep key", function(){
-	var model = create();
+				equal(model.get('user'), undefined);
 
-	equal(model.has('user.name.last'), true);
-});
+				deepEqual(model.toJSON(), {
+					id : 123
+				});
+			});
 
-test("has: Don't find nonexistent key", function(){
-	var model = create();
+			test("unset: Unset a deep key", function ()
+			{
+				var model = create();
 
-	equal(model.has('user.turtleneck'), false);
-});
+				model.unset('user.type');
 
-test("unset: Unset a root key", function(){
-    var model = create();
+				deepEqual(model.get('user'), {
+					name : {
+						first : 'Sterling',
+						last  : 'Archer'
+					}
+				});
 
-    model.unset('user');
+				deepEqual(model.toJSON(), {
+					id   : 123,
+					user : {
+						name : {
+							first : 'Sterling',
+							last  : 'Archer'
+						}
+					}
+				});
 
-    equal(model.get('user'), undefined);
+			});
 
-    deepEqual(model.toJSON(), {
-        id: 123
-    });
-});
+			test("unset: Unset a deeper key", function ()
+			{
+				var model = create();
 
-test("unset: Unset a deep key", function(){
-    var model = create();
+				model.unset('user.name.last');
 
-    model.unset('user.type');
+				deepEqual(model.get('user'), {
+					type : 'Spy',
+					name : {
+						first : 'Sterling'
+					}
+				});
 
-    deepEqual(model.get('user'), {
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        });
+				deepEqual(model.toJSON(), {
+					id   : 123,
+					user : {
+						type : 'Spy',
+						name : {
+							first : 'Sterling'
+						}
+					}
+				});
 
-    deepEqual(model.toJSON(), {
-        id: 123,
-        user: {
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        }
-    });
+			});
 
-});
+			test("unset: Triggers model change:[attribute] events", function ()
+			{
+				(function ()
+				{
+					var model = create();
 
-test("unset: Unset a deeper key", function(){
-    var model = create();
+					var triggered = false;
 
-    model.unset('user.name.last');
+					model.bind('change:id', function (model, val)
+					{
+						equal(val, void 0);
+						triggered = true;
+					});
 
-    deepEqual(model.get('user'), {
-            type: 'Spy',
-            name: {
-                first: 'Sterling'
-            }
-        });
+					model.unset('id');
 
-    deepEqual(model.toJSON(), {
-        id: 123,
-        user: {
-            type: 'Spy',
-            name: {
-                first: 'Sterling'
-            }
-        }
-    });
+					//Check callbacks ran
+					ok(triggered);
+				})();
+
+
+				(function ()
+				{
+					var model = create();
+
+					var triggered1 = false;
+
+					model.bind('change:user.name.first', function (model, val)
+					{
+						equal(val, void 0);
 
-});
+						triggered1 = true;
+					});
+
+					model.unset('user.name.first');
 
-test("unset: Triggers model change:[attribute] events", function() {
-    (function() {
-        var model = create();
+					//Check callbacks ran
+					ok(triggered1);
+				})();
+
+
+				//Check only expected change events are running
+				(function ()
+				{
+					var model = create();
+
+					var triggeredEvents = [];
+
+					model.bind('all', function (changedAttr, model, val)
+					{
+						triggeredEvents.push(changedAttr);
+					});
 
-        var triggered = false;
+					model.unset('id');
+					model.unset('user.name.first');
 
-        model.bind('change:id', function(model, val) {
-            equal(val, void 0);
-            triggered = true;
-        });
+					//Check callbacks ran
+					deepEqual(triggeredEvents, [
+						'change:id',
+						'change',
+						'change:user.name.first',
+						'change:user.name.*',
+						'change:user.name', // * @restorer
+						'change:user.*',
+						'change:user', // * @restorer
+						'change'
+					]);
+				})();
+			});
 
-        model.unset('id');
 
-        //Check callbacks ran
-        ok(triggered);
-    })();
+			test('hasChanged(): matches Model behaviour - when not changed', function ()
+			{
+				var model = new Chaplin.Model({ foo : 'bar' });
 
+				var deepModel = new Chaplin.DeepModel({
+														   foo  : 'bar',
+														   user : {
+															   first : 'John',
+															   last  : 'Smith'
+														   }
+													   });
 
-    (function() {
-        var model = create();
+				//Should match default Model behavior on top level
+				deepEqual(model.hasChanged(), false);
+				deepEqual(deepModel.hasChanged(), false);
+			});
 
-        var triggered1 = false;
 
-        model.bind('change:user.name.first', function(model, val) {
-            equal(val, void 0);
+			test('hasChanged(): matches Model behaviour - when changed', function ()
+			{
+				var model = new Chaplin.Model({ foo : 'bar' });
 
-            triggered1 = true;
-        });
+				var deepModel = new Chaplin.DeepModel({
+														   foo  : 'bar',
+														   user : {
+															   first : 'John',
+															   last  : 'Smith'
+														   }
+													   });
 
-        model.unset('user.name.first');
+				model.set('foo', 'baz');
+				deepModel.set('foo', 'baz');
 
-        //Check callbacks ran
-        ok(triggered1);
-    })();
+				//Should match default Model behavior on top level
+				deepEqual(model.hasChanged(), true);
+				deepEqual(deepModel.hasChanged(), true);
+			});
 
+			test('hasChanged(attr): matches Model behaviour - when not changed', function ()
+			{
+				var model = new Chaplin.Model({ foo : 'bar' });
 
-    //Check only expected change events are running
-    (function() {
-        var model = create();
+				var deepModel = new Chaplin.DeepModel({
+														   foo  : 'bar',
+														   user : {
+															   first : 'John',
+															   last  : 'Smith'
+														   }
+													   });
 
-        var triggeredEvents = [];
+				//Should match default Model behavior on top level
+				deepEqual(model.hasChanged('foo'), false);
+				deepEqual(deepModel.hasChanged('foo'), false);
 
-        model.bind('all', function(changedAttr, model, val) {
-            triggeredEvents.push(changedAttr);
-        });
+				//On nested
+				deepEqual(deepModel.hasChanged('user.first'), false);
+			});
 
-        model.unset('id');
-        model.unset('user.name.first');
 
-        //Check callbacks ran
-        deepEqual(triggeredEvents, [
-            'change:id',
-            'change',
-            'change:user.name.first',
-            'change:user.name.*',
-            'change:user.name', // * @restorer
-            'change:user.*',
-            'change:user', // * @restorer
-            'change'
-        ]);
-    })();
-});
+			test('hasChanged(attr): matches Model behaviour - when changed', function ()
+			{
+				var model = new Chaplin.Model({ foo : 'bar' });
 
+				var deepModel = new Chaplin.DeepModel({
+														   foo  : 'bar',
+														   user : {
+															   first : 'John',
+															   last  : 'Smith'
+														   }
+													   });
 
-test('hasChanged(): matches Model behaviour - when not changed', function() {
-    var model = new Backbone.Model({ foo: 'bar' });
+				//Should match default Model behavior on top level
+				model.set('foo', 'baz');
+				deepModel.set('foo', 'baz');
 
-    var deepModel = new Backbone.DeepModel({
-        foo: 'bar',
-        user: {
-            first: 'John',
-            last: 'Smith'
-        }
-    });
+				deepEqual(model.hasChanged('foo'), true);
+				deepEqual(deepModel.hasChanged('foo'), true);
 
-    //Should match default Model behavior on top level
-    deepEqual(model.hasChanged(), false);
-    deepEqual(deepModel.hasChanged(), false);
-});
+				//On nested
+				deepModel.set('user.first', 'Frank');
 
+				deepEqual(deepModel.hasChanged('user.first'), true);
+			});
 
-test('hasChanged(): matches Model behaviour - when changed', function() {
-    var model = new Backbone.Model({ foo: 'bar' });
 
-    var deepModel = new Backbone.DeepModel({
-        foo: 'bar',
-        user: {
-            first: 'John',
-            last: 'Smith'
-        }
-    });
+			test('changedAttributes(): returns changed attributes', function ()
+			{
+				var model = create();
 
-    model.set('foo', 'baz');
-    deepModel.set('foo', 'baz');
+				model.set('user.name.first', 'Lana', {silent : true});
 
-    //Should match default Model behavior on top level
-    deepEqual(model.hasChanged(), true);
-    deepEqual(deepModel.hasChanged(), true);
-});
+				var changed = model.changedAttributes();
 
-test('hasChanged(attr): matches Model behaviour - when not changed', function() {
-    var model = new Backbone.Model({ foo: 'bar' });
+				var expected = {
+					'user.name.first' : 'Lana'
+				}
 
-    var deepModel = new Backbone.DeepModel({
-        foo: 'bar',
-        user: {
-            first: 'John',
-            last: 'Smith'
-        }
-    });
+				deepEqual(changed, expected);
+			});
 
-    //Should match default Model behavior on top level
-    deepEqual(model.hasChanged('foo'), false);
-    deepEqual(deepModel.hasChanged('foo'), false);
 
-    //On nested
-    deepEqual(deepModel.hasChanged('user.first'), false);
-});
+			test('changedAttributes(): returns changed attributes compared to given object', function ()
+			{
+				var model = create();
 
+				var diff = {
+					id               : 789,
+					'user.name.last' : 'Kang'
+				}
 
-test('hasChanged(attr): matches Model behaviour - when changed', function() {
-    var model = new Backbone.Model({ foo: 'bar' });
+				var changed = model.changedAttributes(diff);
 
-    var deepModel = new Backbone.DeepModel({
-        foo: 'bar',
-        user: {
-            first: 'John',
-            last: 'Smith'
-        }
-    });
+				var expected = {
+					id               : 789,
+					'user.name.last' : 'Kang'
+				}
 
-    //Should match default Model behavior on top level
-    model.set('foo', 'baz');
-    deepModel.set('foo', 'baz');
+				deepEqual(changed, expected);
+			});
 
-    deepEqual(model.hasChanged('foo'), true);
-    deepEqual(deepModel.hasChanged('foo'), true);
 
-    //On nested
-    deepModel.set('user.first', 'Frank');
+			test('changedAttributes(): behaves as Model for top level properties', function ()
+			{
+				var model = new Chaplin.Model({foo : 1, bar : 1}),
+						deepModel = new Chaplin.DeepModel({foo : 1, bar : 1});
 
-    deepEqual(deepModel.hasChanged('user.first'), true);
-});
+				deepEqual(deepModel.changedAttributes(), model.changedAttributes());
 
+				model.set({foo : 2});
+				deepModel.set({foo : 2});
 
+				deepEqual(model.changedAttributes(), { foo : 2 });
+				deepEqual(deepModel.changedAttributes(), { foo : 2 });
+			});
 
-test('changedAttributes(): returns changed attributes', function() {
-    var model = create();
+			test('changedAttributes(): with deep properties', function ()
+			{
+				var deepModel = new Chaplin.DeepModel({
+														   foo : { baz : 1 },
+														   bar : { baz : 1 }
+													   });
 
-    model.set('user.name.first', 'Lana', {silent: true});
+				deepEqual(deepModel.changedAttributes(), false);
 
-    var changed = model.changedAttributes();
+				deepModel.set({'foo.bar' : 2});
+				deepEqual(deepModel.changedAttributes(), {'foo.bar' : 2});
+			});
 
-    var expected = {
-        'user.name.first': 'Lana'
-    }
 
-    deepEqual(changed, expected);
-});
+			test('changedAttributes(diff): behaves as Model for top level properties', function ()
+			{
+				var model = new Chaplin.Model({foo : 1, bar : 1}),
+						deepModel = new Chaplin.DeepModel({foo : 1, bar : 1});
 
+				var diff = { foo : 2 };
 
-test('changedAttributes(): returns changed attributes compared to given object', function() {
-    var model = create();
+				deepEqual(deepModel.changedAttributes(diff), model.changedAttributes(diff));
+				deepEqual(deepModel.changedAttributes(diff), { foo : 2 });
 
-    var diff = {
-        id: 789,
-        'user.name.last': 'Kang'
-    }
+				model.set({foo : 2});
+				deepModel.set({foo : 2});
+				deepEqual(deepModel.changedAttributes(diff), model.changedAttributes(diff));
+				deepEqual(deepModel.changedAttributes(diff), false);
+			});
 
-    var changed = model.changedAttributes(diff);
+			test('changedAttributes(diff): with deep properties', function ()
+			{
+				var deepModel = new Chaplin.DeepModel({
+														   foo : { baz : 1 },
+														   bar : { baz : 1 }
+													   });
 
-    var expected = {
-        id: 789,
-        'user.name.last': 'Kang'
-    }
+				var diff = { 'foo.baz' : 2 };
 
-    deepEqual(changed, expected);
-});
+				deepEqual(deepModel.changedAttributes(diff), { 'foo.baz' : 2 });
 
+				deepModel.set({'foo.baz' : 2});
+				deepEqual(deepModel.changedAttributes(diff), false);
+			});
 
-test('changedAttributes(): behaves as Model for top level properties', function() {
-    var model = new Backbone.Model({foo:1, bar:1}),
-        deepModel = new Backbone.DeepModel({foo:1, bar:1});
 
-    deepEqual(deepModel.changedAttributes(), model.changedAttributes());
+			test('hasChanged(): behaves as Model for top level attributes', function ()
+			{
+				var model = new Chaplin.Model({test : 1}),
+						deepModel = new Chaplin.DeepModel({test : 1});
 
-    model.set({foo:2});
-    deepModel.set({foo:2});
+				equal(deepModel.hasChanged(), model.hasChanged());
 
-    deepEqual(model.changedAttributes(), { foo: 2 });
-    deepEqual(deepModel.changedAttributes(), { foo: 2 });
-});
+				//With silent
+				model.set({test : 2});
+				deepModel.set({test : 2});
 
-test('changedAttributes(): with deep properties', function() {
-    var deepModel = new Backbone.DeepModel({
-        foo: { baz: 1 },
-        bar: { baz: 1 }
-    });
+				deepEqual(model.hasChanged(), true);
+				deepEqual(deepModel.hasChanged(), true);
+			});
 
-    deepEqual(deepModel.changedAttributes(), false);
 
-    deepModel.set({'foo.bar':2});
-    deepEqual(deepModel.changedAttributes(), {'foo.bar':2});
-});
+			test('hasChanged(): with deep attributes', function ()
+			{
+				var deepModel = new Chaplin.DeepModel({
+														   foo : { bar : 1 }
+													   });
 
+				equal(deepModel.hasChanged(), false);
 
-test('changedAttributes(diff): behaves as Model for top level properties', function() {
-    var model = new Backbone.Model({foo:1, bar:1}),
-        deepModel = new Backbone.DeepModel({foo:1, bar:1});
+				deepModel.set({'foo.bar' : 2});
+				equal(deepModel.hasChanged(), true);
+			});
 
-    var diff = { foo: 2 };
 
-    deepEqual(deepModel.changedAttributes(diff), model.changedAttributes(diff));
-    deepEqual(deepModel.changedAttributes(diff), { foo: 2 });
+			test('hasChanged(attr): behaves as Model for top level attributes', function ()
+			{
+				var model = new Chaplin.Model({test : 1}),
+						deepModel = new Chaplin.DeepModel({test : 1});
 
-    model.set({foo:2});
-    deepModel.set({foo:2});
-    deepEqual(deepModel.changedAttributes(diff), model.changedAttributes(diff));
-    deepEqual(deepModel.changedAttributes(diff), false);
-});
+				equal(deepModel.hasChanged('test'), model.hasChanged('test'));
 
-test('changedAttributes(diff): with deep properties', function() {
-    var deepModel = new Backbone.DeepModel({
-        foo: { baz: 1 },
-        bar: { baz: 1 }
-    });
+				model.set({test : 2});
+				deepModel.set({test : 2});
 
-    var diff = { 'foo.baz': 2 };
+				deepEqual(model.hasChanged('test'), true);
+				deepEqual(deepModel.hasChanged('test'), true);
+			});
 
-    deepEqual(deepModel.changedAttributes(diff), { 'foo.baz': 2 });
 
-    deepModel.set({'foo.baz': 2});
-    deepEqual(deepModel.changedAttributes(diff), false);
-});
+			test('hasChanged(attr): with deep attributes', function ()
+			{
+				var deepModel = new Chaplin.DeepModel({
+														   foo : { bar : 1 }
+													   });
 
+				equal(deepModel.hasChanged('foo.bar'), false);
 
-test('hasChanged(): behaves as Model for top level attributes', function() {
-    var model = new Backbone.Model({test:1}),
-        deepModel = new Backbone.DeepModel({test:1});
+				deepModel.set({'foo.bar' : 2});
+				equal(deepModel.hasChanged('foo.bar'), true);
+			});
 
-    equal(deepModel.hasChanged(), model.hasChanged());
 
-    //With silent
-    model.set({test:2});
-    deepModel.set({test:2});
+			test("defaults: with deep attributes", function ()
+			{
+				var DefaultsModel = Chaplin.DeepModel.extend({
+																  defaults : {
+																	  details : {
+																		  name : {
+																			  last    : 'Smith',
+																			  initial : 'J'
+																		  }
+																	  }
+																  }
+															  });
 
-    deepEqual(model.hasChanged(), true);
-    deepEqual(deepModel.hasChanged(), true);
-});
+				var model = new DefaultsModel({
+												  details : {
+													  name : {
+														  first   : 'John',
+														  initial : 'Z'
+													  }
+												  }
+											  });
 
+				equal(model.get('details.name.first'), 'John');
+				equal(model.get('details.name.last'), 'Smith');
+				equal(model.get('details.name.initial'), 'Z');
+			});
 
-test('hasChanged(): with deep attributes', function() {
-    var deepModel = new Backbone.DeepModel({
-        foo: { bar: 1 }
-    });
 
-    equal(deepModel.hasChanged(), false);
+			test('defaults: does not cause a problem with a collection in an attribute', function ()
+			{
+				var Model = Chaplin.DeepModel.extend({
+														  defaults : {
+															  foo : 'bar'
+														  }
+													  });
 
-    deepModel.set({'foo.bar':2});
-    equal(deepModel.hasChanged(), true);
-});
+				var model = new Model({ collection : new Chaplin.Collection });
 
-
-test('hasChanged(attr): behaves as Model for top level attributes', function() {
-    var model = new Backbone.Model({test:1}),
-        deepModel = new Backbone.DeepModel({test:1});
-
-    equal(deepModel.hasChanged('test'), model.hasChanged('test'));
-
-    model.set({test:2});
-    deepModel.set({test:2});
-
-    deepEqual(model.hasChanged('test'), true);
-    deepEqual(deepModel.hasChanged('test'), true);
-});
-
-
-test('hasChanged(attr): with deep attributes', function() {
-    var deepModel = new Backbone.DeepModel({
-        foo: { bar: 1 }
-    });
-
-    equal(deepModel.hasChanged('foo.bar'), false);
-
-    deepModel.set({'foo.bar':2});
-    equal(deepModel.hasChanged('foo.bar'), true);
-});
-
-
-test("defaults: with deep attributes", function() {
-    var DefaultsModel = Backbone.DeepModel.extend({
-        defaults: {
-            details: {
-                name: {
-                    last: 'Smith',
-                    initial: 'J'
-                }
-            }
-        }
-    });
-
-    var model = new DefaultsModel({
-        details: {
-            name: {
-                first: 'John',
-                initial: 'Z'
-            }
-        }
-    });
-
-    equal(model.get('details.name.first'), 'John');
-    equal(model.get('details.name.last'), 'Smith');
-    equal(model.get('details.name.initial'), 'Z');
-});
-
-
-test('defaults: does not cause a problem with a collection in an attribute', function() {
-    var Model = Backbone.DeepModel.extend({
-        defaults: {
-            foo: 'bar'
-        }
-    });
-
-    var model = new Model({ collection: new Backbone.Collection });
-
-    ok(model.get('collection') instanceof Backbone.Collection);
-});
+				ok(model.get('collection') instanceof Chaplin.Collection);
+			});
 
 // + @restorer
-test("set: Trigger change events only once", function() {
-    (function() {
-        var model = create();
+			test("set: Trigger change events only once", function ()
+			{
+				(function ()
+				{
+					var model = create();
 
-        var triggeredEvents = [];
+					var triggeredEvents = [];
 
-        model.bind('all', function(changedAttr, model, val) {
-            triggeredEvents.push(changedAttr);
-        });
+					model.bind('all', function (changedAttr, model, val)
+					{
+						triggeredEvents.push(changedAttr);
+					});
 
-        model.set({
-            'id': 456,
-            'user.name.first': 'Lana',
-            'user.name.last': 'Kang'
-        });
+					model.set({
+								  'id'              : 456,
+								  'user.name.first' : 'Lana',
+								  'user.name.last'  : 'Kang'
+							  });
 
-        //Check callbacks ran
-        deepEqual(triggeredEvents, [
-            'change:id',
-            'change:user.name.first',
-            'change:user.name.*',
-            'change:user.name',
-            'change:user.*',
-            'change:user',
-            'change:user.name.last',
-            'change'
-        ]);
-    })();
-});
+					//Check callbacks ran
+					deepEqual(triggeredEvents, [
+						'change:id',
+						'change:user.name.first',
+						'change:user.name.*',
+						'change:user.name',
+						'change:user.*',
+						'change:user',
+						'change:user.name.last',
+						'change'
+					]);
+				})();
+			});
 
-test('set: Trigger model change:[attribute] event for parent keys (like wildcard)', function() {
-    (function() {
-        var model = create();
-        var triggered = false;
+			test('set: Trigger model change:[attribute] event for parent keys (like wildcard)', function ()
+			{
+				(function ()
+				{
+					var model = create();
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            deepEqual(val, {});
-            triggered = true;
-        });
+					model.on('change:user', function (model, val)
+					{
+						deepEqual(val, {});
+						triggered = true;
+					});
 
-        model.set('user', {});
-        ok(triggered);
-    })();
+					model.set('user', {});
+					ok(triggered);
+				})();
 
-    (function() {
-        var model = create();
-        var triggered = false;
+				(function ()
+				{
+					var model = create();
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            deepEqual(val, null);
-            triggered = true;
-        });
+					model.on('change:user', function (model, val)
+					{
+						deepEqual(val, null);
+						triggered = true;
+					});
 
-        model.set('user', null);
-        ok(triggered);
-    })();
+					model.set('user', null);
+					ok(triggered);
+				})();
 
-    (function() {
-        var model = create();
-        var triggered = false;
+				(function ()
+				{
+					var model = create();
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            ok(typeof(val) === 'undefined');
-            triggered = true;
-        });
+					model.on('change:user', function (model, val)
+					{
+						ok(typeof(val) === 'undefined');
+						triggered = true;
+					});
 
-        model.set('user', void 0, true);
-        ok(triggered);
-    })();
+					model.set('user', void 0, true);
+					ok(triggered);
+				})();
 
-    (function() {
-        var model = new Backbone.DeepModel({
-            id: 123,
-            user: {}
-        });
+				(function ()
+				{
+					var model = new Chaplin.DeepModel({
+														   id   : 123,
+														   user : {}
+													   });
 
-        var triggered = false;
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            deepEqual(val, {
-                type: 'Spy',
-                name: {
-                    first: 'Sterling',
-                    last: 'Archer'
-                }
-            });
+					model.on('change:user', function (model, val)
+					{
+						deepEqual(val, {
+							type : 'Spy',
+							name : {
+								first : 'Sterling',
+								last  : 'Archer'
+							}
+						});
 
-            triggered = true;
-        });
+						triggered = true;
+					});
 
-        model.set('user', {
-            type: 'Spy',
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        });
+					model.set('user', {
+						type : 'Spy',
+						name : {
+							first : 'Sterling',
+							last  : 'Archer'
+						}
+					});
 
-        ok(triggered);
-    })();
+					ok(triggered);
+				})();
 
-    (function() {
-        var model = new Backbone.DeepModel({
-            id: 123,
-            user: null
-        });
+				(function ()
+				{
+					var model = new Chaplin.DeepModel({
+														   id   : 123,
+														   user : null
+													   });
 
-        var triggered = false;
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            deepEqual(val, {
-                type: 'Spy',
-                name: {
-                    first: 'Sterling',
-                    last: 'Archer'
-                }
-            });
+					model.on('change:user', function (model, val)
+					{
+						deepEqual(val, {
+							type : 'Spy',
+							name : {
+								first : 'Sterling',
+								last  : 'Archer'
+							}
+						});
 
-            triggered = true;
-        });
+						triggered = true;
+					});
 
-        model.set('user', {
-            type: 'Spy',
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        });
+					model.set('user', {
+						type : 'Spy',
+						name : {
+							first : 'Sterling',
+							last  : 'Archer'
+						}
+					});
 
-        ok(triggered);
-    })();
+					ok(triggered);
+				})();
 
-    (function() {
-        var model = new Backbone.DeepModel({
-            id: 123
-        });
+				(function ()
+				{
+					var model = new Chaplin.DeepModel({
+														   id : 123
+													   });
 
-        var triggered = false;
+					var triggered = false;
 
-        model.on('change:user', function(model, val) {
-            deepEqual(val, {
-                type: 'Spy',
-                name: {
-                    first: 'Sterling',
-                    last: 'Archer'
-                }
-            });
+					model.on('change:user', function (model, val)
+					{
+						deepEqual(val, {
+							type : 'Spy',
+							name : {
+								first : 'Sterling',
+								last  : 'Archer'
+							}
+						});
 
-            triggered = true;
-        });
+						triggered = true;
+					});
 
-        model.set('user', {
-            type: 'Spy',
-            name: {
-                first: 'Sterling',
-                last: 'Archer'
-            }
-        });
+					model.set('user', {
+						type : 'Spy',
+						name : {
+							first : 'Sterling',
+							last  : 'Archer'
+						}
+					});
 
-        ok(triggered);
-    })();
-});
+					ok(triggered);
+				})();
+			});
 // - @restorer
+		}
+	}
+});
