@@ -1,5 +1,8 @@
-backbone-deep-model
+Chaplinjs-deep-model
 ===================
+
+this is a fork of [powmedia/backbone-deep-model](https://github.com/powmedia/backbone-deep-model)
+to make [Chaplin.js](http://chaplinjs.org/) models work with nested attributes
 
 Improved support for models with nested attributes.
 
@@ -16,7 +19,6 @@ Installation
 ============
 
 1. Include Backbone and it's dependencies in your page/app.
-2. Include `distribution/deep-model.min.js`
 
 Usage
 =====
@@ -26,7 +28,7 @@ Then just have your models extend from Backbone.DeepModel instead of Backbone.Mo
 Example code:
 
     //Create models with nested attributes
-    var model = new Backbone.DeepModel({
+    var model = new Chaplin.DeepModel({
         id: 123,
         user: {
             type: 'Spy',
@@ -40,7 +42,7 @@ Example code:
             { name: 'Cyrril' }
         ]
     });
-    
+
     //You can bind to change events on nested attributes
     model.bind('change:user.name.first', function(model, val) {
         console.log(val);
@@ -48,14 +50,14 @@ Example code:
 
     //Wildcards are supported
     model.bind('change:user.*', function() {});
-    
+
     //Use set with a path name for nested attributes
     //NOTE you must you quotation marks around the key name when using a path
     model.set({
         'user.name.first': 'Lana',
         'user.name.last':  'Kang'
     });
-    
+
     //Use get() with path names so you can create getters later
     console.log(model.get('user.type'));    // 'Spy'
 
